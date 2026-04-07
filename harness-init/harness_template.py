@@ -268,18 +268,21 @@ def build_prompt(phase_num: int, retry_context: str = "") -> str:
     base_prompt = f"""
 CLAUDE.md, PRD.md, TODO.md를 읽고 Phase {phase_num}을 구현하라.
 
-필수 프로세스:
+필수 프로세스 (항목마다 READ → IMPLEMENT → GATE 사이클):
 1. TODO.md에서 Phase {phase_num}의 미완료(`[ ]`) 항목을 확인
 2. PRD.md에서 해당 Phase의 상세 스펙 참조
-3. CLAUDE.md의 코드 규칙을 엄격히 준수
-4. 모든 항목 구현 후, 아래 검증 명령어를 실행:
+3. 각 항목 구현 전 관련 파일을 Read로 현재 상태 파악 (READ)
+4. 가장 단순한 동작 구현 먼저 — 불필요한 추상화 금지 (IMPLEMENT)
+5. 모든 항목 구현 후, 아래 검증 명령어를 실행 (GATE):
 {chr(10).join('   ' + cmd for cmd in PHASE_VERIFY.get(phase_num, []))}
-5. 검증 통과 시 TODO.md의 해당 항목을 [x]로 변경
-6. git add -A && git commit
+6. 검증 통과 시 TODO.md의 해당 항목을 [x]로 변경
+7. 구현 결과가 PRD 스펙에서 벗어나지 않았는지 확인
+8. git add -A && git commit
 
 절대 규칙:
 - 검증 없이 [x]로 체크 금지
 - "통과했다"고 주장 금지 — 실제 명령어 출력 결과를 보여라
+- 이미 동작하는 코드를 다시 짜지 마라 — 실패 시 되돌리지 않고 수정
 - 질문하지 말고 판단하라
 """.strip()
 
