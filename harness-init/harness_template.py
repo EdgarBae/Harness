@@ -350,7 +350,7 @@ def run_claude(prompt: str, model: str, logger: logging.Logger,
             CLAUDE_CMD,
             "--print",
             "--model", model_id,
-            "--allowedTools", "Bash,Read,Write,Edit",
+            "--allowedTools", "Bash,Read,Write,Edit,Glob,Grep",
         ]
 
     logger.debug(f"Run: {' '.join(cmd)}")
