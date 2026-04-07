@@ -241,12 +241,19 @@ def run_verification(phase_num: int, logger: logging.Logger) -> tuple[bool, str]
 
 # ─── Git 자동 커밋 ────────────────────────────────────────
 
+# TODO: Phase별 git add 대상 경로 (git add -A 대신 스코프 커밋)
+PHASE_GIT_SCOPE: dict[int, list[str]] = {
+    # 1: ["src/", "package.json", "tsconfig.json", "TODO.md"],
+    # 2: ["src/", "TODO.md"],
+}
+
 def git_auto_commit(phase_num: int, logger: logging.Logger):
-    """Phase 완료 후 자동 git commit"""
+    """Phase 완료 후 자동 git commit (Phase 스코프만 add)"""
     msg = COMMIT_MESSAGES.get(phase_num, f"feat(phase-{phase_num}): phase {phase_num} complete")
 
     try:
-        subprocess.run(["git", "add", "-A"], cwd=str(PROJECT_DIR), capture_output=True,
+        scope = PHASE_GIT_SCOPE.get(phase_num, ["src/", "TODO.md"])
+        subprocess.run(["git", "add", "--"] + scope, cwd=str(PROJECT_DIR), capture_output=True,
                        encoding="utf-8", errors="replace")
         result = subprocess.run(
             ["git", "commit", "-m", msg],
@@ -277,14 +284,15 @@ CLAUDE.md, PRD.md, TODO.md를 읽고 Phase {phase_num}을 구현하라.
 {chr(10).join('   ' + cmd for cmd in PHASE_VERIFY.get(phase_num, []))}
 6. 검증 통과 시 TODO.md의 해당 항목을 [x]로 변경
 7. 구현 결과가 PRD 스펙에서 벗어나지 않았는지 확인
-8. git add -A && git commit
+8. git add (Phase 대상 파일만) && git commit
 
 절대 규칙:
 - 검증 없이 [x]로 체크 금지
 - "통과했다"고 주장 금지 — 실제 명령어 출력 결과를 보여라
 - 이미 동작하는 코드를 다시 짜지 마라 — 실패 시 되돌리지 않고 수정
-- 단, 인터페이스(Props, 함수 시그니처, 타입)를 변경했으면 그것을 참조하는 기존 코드(테스트, 다른 컴포넌트)도 반드시 함께 수정하라
-- 구현 완료 후 검증 전에 `tsc --noEmit` 등 타입 체크를 먼저 돌려서 인터페이스 불일치를 잡아라
+- 인터페이스(Props, 함수 시그니처, 타입)를 변경했으면 그것을 참조하는 기존 코드도 함께 수정하라
+- 테스트 파일을 수정할 때는 PRD.md의 스펙을 기준으로 판단하라. 구현에 끼워맞추지 말고, PRD가 정의한 동작을 검증하도록 수정하라
+- 구현 완료 후 검증 전에 타입 체크를 먼저 돌려서 인터페이스 불일치를 잡아라
 - 질문하지 말고 판단하라
 """.strip()
 
